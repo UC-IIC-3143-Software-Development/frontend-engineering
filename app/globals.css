@@ -352,6 +352,9 @@ h1 {
 
 .pista {
   display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 0.75rem;
   color: var(--suave);
 }
@@ -400,4 +403,38 @@ h1 {
   .barra-col {
     display: none;
   }
+}
+
+/* Core Web Vitals: valor, calificación y elemento responsable */
+.vitales {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.vitales dt strong {
+  color: var(--texto);
+}
+
+.vitales dd {
+  font-size: 1.4rem;
+}
+
+.rating {
+  margin-left: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.medicion-titulo + .cifras,
+.cifras + .medicion-titulo {
+  margin-top: 0.5rem;
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+.tabla-scroll .comparacion {
+  min-width: 560px;
 }
