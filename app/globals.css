@@ -1,0 +1,244 @@
+:root {
+  --fondo: #f7f6f2;
+  --texto: #1f2a30;
+  --suave: #5b6770;
+  --acento: #0f5c4d;
+  --borde: #e2e0d8;
+  --tarjeta: #ffffff;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--texto);
+  background: var(--fondo);
+  line-height: 1.5;
+}
+
+a {
+  color: var(--acento);
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--tarjeta);
+  border-bottom: 1px solid var(--borde);
+}
+
+.marca {
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-decoration: none;
+  color: var(--texto);
+}
+
+.cabecera nav {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.95rem;
+}
+
+.contenedor {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 2rem;
+}
+
+h1 {
+  font-size: 1.9rem;
+  line-height: 1.2;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.bajada {
+  font-size: 1.15rem;
+  color: var(--suave);
+  max-width: 60ch;
+  margin: 0 0 1.5rem;
+}
+
+/* Visible solo para lectores de pantalla */
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Portada */
+.hero {
+  position: relative;
+}
+
+.hero-img {
+  display: block;
+  width: 100%;
+  height: clamp(280px, 55vh, 560px);
+  object-fit: cover;
+}
+
+.hero-texto {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 2rem 1.25rem 1.5rem;
+  color: #fff;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+}
+
+.hero-texto h1 {
+  margin: 0;
+  max-width: 1100px;
+}
+
+.hero-texto p {
+  margin: 0.25rem 0 0;
+  font-size: 1.1rem;
+}
+
+/* Productos */
+.grilla {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  min-height: 170px;
+  padding: 1rem;
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+}
+
+.tarjeta h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+
+.tarjeta p {
+  margin: 0 0 0.6rem;
+  color: var(--suave);
+  font-size: 0.95rem;
+}
+
+.tarjeta strong {
+  color: var(--acento);
+}
+
+.compra {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.agregar {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--acento);
+  border-radius: 999px;
+  background: var(--tarjeta);
+  color: var(--acento);
+  cursor: pointer;
+}
+
+.agregar[aria-pressed='true'] {
+  background: var(--acento);
+  color: #fff;
+}
+
+/* Esqueleto de la página CSR */
+.esqueleto {
+  background: linear-gradient(90deg, #ebe9e2, #f4f3ee, #ebe9e2);
+  background-size: 200% 100%;
+  border-radius: 10px;
+}
+
+.esqueleto-titulo {
+  height: 2.3rem;
+  width: 60%;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.esqueleto-bajada {
+  height: 5.2rem;
+  max-width: 60ch;
+  margin: 0 0 1.5rem;
+}
+
+.credito,
+.nota {
+  font-size: 0.85rem;
+  color: var(--suave);
+  margin-top: 1.5rem;
+}
+
+/* Tablero RUM */
+.rum table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--tarjeta);
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+.rum th,
+.rum td {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--borde);
+}
+
+.rum th {
+  background: #eeece5;
+}
+
+.rum .num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.rum code {
+  font-size: 0.8rem;
+}
+
+.bueno {
+  color: #0a7d3b;
+  font-weight: 700;
+}
+
+.mejorable {
+  color: #b26a00;
+  font-weight: 700;
+}
+
+.malo {
+  color: #c62828;
+  font-weight: 700;
+}
+
+.pie {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--suave);
+  padding: 2rem 1rem;
+}

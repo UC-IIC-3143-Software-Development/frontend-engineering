@@ -1,0 +1,19 @@
+# dependencias
+node_modules/
+
+# salida de Next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# reportes de Lighthouse CI
+.lighthouseci/
+
+# muestras de RUM guardadas en local
+.data/
+
+# varios
+.DS_Store
+*.log
+.env*.local

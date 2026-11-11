@@ -1,0 +1,35 @@
+{
+  "name": "demo-web-performance",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "size": "size-limit",
+    "lhci": "lhci autorun"
+  },
+  "dependencies": {
+    "next": "^16.4.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "web-vitals": "^6.2.3"
+  },
+  "devDependencies": {
+    "@lhci/cli": "^0.16.0",
+    "@size-limit/file": "^14.3.0",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "size-limit": "^14.3.0",
+    "typescript": "^7.0.2"
+  },
+  "size-limit": [
+    {
+      "name": "JS del cliente (gzip)",
+      "path": ".next/static/chunks/**/*.js",
+      "gzip": true,
+      "limit": "210 kB"
+    }
+  ]
+}
