@@ -1,0 +1,82 @@
+name: Reporte de rendimiento del PR
+
+# Mide main y el PR en el mismo runner (Lighthouse, size-limit y
+# axe-core) y comenta en el PR si cada métrica mejora, se mantiene o
+# empeora. No bloquea el merge: eso lo
+# hacen los presupuestos del workflow Rendimiento.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: reporte-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  reporte:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Código del PR
+        uses: actions/checkout@v7
+        with:
+          path: pr
+
+      - name: Código de main (base del PR)
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: main
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: |
+            pr/package-lock.json
+            main/package-lock.json
+
+      # El PR va primero: sus dependencias (axe-core, puppeteer-core)
+      # también se usan para medir main con la misma configuración
+      - name: Medir el PR
+        working-directory: pr
+        env:
+          LHCI_CONFIG: ${{ github.workspace }}/pr/lighthouserc.js
+          A11Y_SCRIPT: ${{ github.workspace }}/pr/ci/accesibilidad.mjs
+        run: ./ci/medir.sh
+
+      - name: Medir main
+        working-directory: main
+        env:
+          LHCI_CONFIG: ${{ github.workspace }}/pr/lighthouserc.js
+          A11Y_SCRIPT: ${{ github.workspace }}/pr/ci/accesibilidad.mjs
+        run: ../pr/ci/medir.sh
+
+      - name: Armar el reporte
+        run: |
+          node pr/ci/reporte.mjs main pr > reporte.md
+          cat reporte.md >> "$GITHUB_STEP_SUMMARY"
+
+      # Un solo comentario por PR: si ya existe, se actualiza.
+      # Los PR desde un fork no pueden comentar: ven el reporte en el
+      # resumen de esta ejecución
+      - name: Comentar en el PR
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs')
+            const body = fs.readFileSync('reporte.md', 'utf8')
+            const { owner, repo } = context.repo
+            const issue_number = context.issue.number
+            const comentarios = await github.paginate(
+              github.rest.issues.listComments, { owner, repo, issue_number })
+            const previo = comentarios.find((c) =>
+              c.body.includes('<!-- reporte-rendimiento -->'))
+            if (previo) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: previo.id, body })
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body })
+            }

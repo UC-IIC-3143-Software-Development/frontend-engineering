@@ -131,6 +131,31 @@ En el PR van a ver que fallan los dos presupuestos:
 
 Para volver atrás: `git apply -R demo/regresion.patch`.
 
+## Reporte de rendimiento en cada PR
+
+El workflow **Reporte de rendimiento del PR**
+(`.github/workflows/reporte-pr.yml`) mide `main` y el PR en el mismo
+runner y deja un comentario en el PR, que se actualiza con cada push:
+
+- **Core Web Vitals de laboratorio** por ruta: LCP, CLS y TBT (TBT
+  aproxima a INP, porque en una carga de Lighthouse nadie hace clic).
+- **Peso del JavaScript** (size-limit).
+- **FCP, Speed Index, TTFB y puntaje**, en una sección desplegable.
+- Para cada métrica: valor en `main`, valor en el PR, cambio y si
+  **mejora, se mantiene o empeora**. Un cambio pequeño cuenta como ruido
+  de medición. Los umbrales están en `ci/reporte.mjs`.
+- **Accesibilidad**: puntaje de accesibilidad de Lighthouse y las
+  violaciones que encuentra [axe-core](https://github.com/dequelabs/axe-core),
+  el motor open source que también usa Lighthouse, con cada regla, su
+  impacto y cuántos elementos afecta (`ci/accesibilidad.mjs`).
+- **Buenas prácticas y SEO** de Lighthouse, en la sección desplegable.
+
+Este reporte informa y no bloquea. Lo que bloquea son los presupuestos
+del workflow **Rendimiento**.
+
+Todo corre con herramientas open source y sin cuentas ni claves:
+Lighthouse CI, size-limit y axe-core sobre el Chrome del runner.
+
 ## RUM: métricas de usuarios reales
 
 1. Con `npm run start` corriendo, abran varias páginas y hagan clic en

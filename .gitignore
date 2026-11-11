@@ -17,3 +17,6 @@ next-env.d.ts
 .DS_Store
 *.log
 .env*.local
+
+# mediciones del reporte de PR
+medicion-size.json

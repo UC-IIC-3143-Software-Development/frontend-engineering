@@ -1,29 +1,61 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import type { MetricWithAttribution } from 'web-vitals/attribution'
 
 export type TipoRender = 'ssg' | 'ssr' | 'csr'
 
 // Milisegundos desde que el navegador empezó a cargar la página
+// (CLS no tiene unidad)
 type Medicion = {
   ttfb?: number // llega el primer byte del HTML
   fcp?: number // primer texto o imagen en pantalla
   catalogo?: number // el catálogo se pinta (Element Timing)
   interactiva?: number // React terminó de hidratar: los clics funcionan
+  lcp?: number
+  inp?: number
+  cls?: number
 }
+
+type Vital = { valor: number, rating: string, elemento?: string }
+type NombreVital = 'LCP' | 'INP' | 'CLS'
 
 type Sesion = Partial<Record<TipoRender, Medicion>>
 
 const CLAVE = 'medicion-render'
 const TIPOS: TipoRender[] = ['ssg', 'ssr', 'csr']
-const COLUMNAS: [keyof Medicion, string][] = [
-  ['ttfb', 'Primer byte'],
-  ['fcp', 'Primer pintado'],
+
+// Core Web Vitals: umbral "bueno" de Google y pista mientras no hay valor
+const VITALES: [NombreVital, string, string, string][] = [
+  ['LCP', 'Largest Contentful Paint', 'bueno ≤ 2.500 ms', 'esperando el elemento más grande'],
+  ['INP', 'Interaction to Next Paint', 'bueno ≤ 200 ms', 'hagan clic en «Agregar al carro»'],
+  ['CLS', 'Cumulative Layout Shift', 'bueno ≤ 0,1', 'midiendo movimientos'],
+]
+const LINEA: [keyof Medicion, string][] = [
+  ['ttfb', 'Primer byte (TTFB)'],
+  ['fcp', 'Primer pintado (FCP)'],
   ['catalogo', 'Catálogo visible'],
+  ['interactiva', 'Interactiva (hidratada)'],
+]
+const TABLA: [keyof Medicion, string][] = [
+  ['ttfb', 'TTFB'],
+  ['fcp', 'FCP'],
+  ['lcp', 'LCP'],
+  ['inp', 'INP'],
+  ['cls', 'CLS'],
   ['interactiva', 'Interactiva'],
 ]
+const RATING: Record<string, [string, string]> = {
+  good: ['bueno', 'bueno'],
+  'needs-improvement': ['mejorable', 'mejorable'],
+  poor: ['deficiente', 'malo'],
+}
 
 const ms = (v?: number) => (v === undefined ? '...' : `${Math.round(v)} ms`)
+const cls = (v: number) =>
+  v.toLocaleString('es-CL', { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+const formato = (clave: keyof Medicion, v?: number) =>
+  v === undefined ? '...' : clave === 'cls' ? cls(v) : ms(v)
 
 function leerSesion(): Sesion {
   try {
@@ -41,6 +73,7 @@ export function MedicionRender({
   generadoEn?: string
 }) {
   const [actual, setActual] = useState<Medicion>({})
+  const [vitales, setVitales] = useState<Partial<Record<NombreVital, Vital>>>({})
   const [sesion, setSesion] = useState<Sesion>({})
   const [api, setApi] = useState<{ duracion: number, fin: number }>()
   const [html, setHtml] = useState<{ kb: number, productos: number }>()
@@ -62,12 +95,43 @@ export function MedicionRender({
       )
     }
 
+    let activo = true
     const guardar = () => {
+      if (!activo) return
       setActual({ ...m })
       const nueva = { ...leerSesion(), [tipo]: { ...m } }
       sessionStorage.setItem(CLAVE, JSON.stringify(nueva))
       setSesion(nueva)
     }
+
+    // Core Web Vitals con la misma librería que usa Google.
+    // reportAllChanges: muestra cada cambio en vivo, no solo el final
+    const registrar = (metrica: MetricWithAttribution) => {
+      const elemento =
+        metrica.name === 'LCP' ? metrica.attribution.target
+        : metrica.name === 'INP' ? metrica.attribution.interactionTarget
+        : metrica.name === 'CLS' ? metrica.attribution.largestShiftTarget
+        : undefined
+      const nombre = metrica.name as NombreVital
+      const clave = nombre.toLowerCase() as 'lcp' | 'inp' | 'cls'
+      m[clave] = metrica.value
+      if (activo) {
+        setVitales((v) => ({
+          ...v,
+          [nombre]: { valor: metrica.value, rating: metrica.rating, elemento },
+        }))
+      }
+      guardar()
+    }
+    // Import dinámico: web-vitals se carga después de hidratar y no
+    // retrasa la carga de la página (en CSR, el pedido de los datos).
+    // Sus observadores usan buffered, así que no pierden nada
+    import('web-vitals/attribution').then(({ onCLS, onINP, onLCP }) => {
+      if (!activo) return
+      onLCP(registrar, { reportAllChanges: true })
+      onINP(registrar, { reportAllChanges: true })
+      onCLS(registrar, { reportAllChanges: true })
+    })
 
     const tipos = PerformanceObserver.supportedEntryTypes
     const conElement = tipos.includes('element')
@@ -107,6 +171,7 @@ export function MedicionRender({
     }, 1500)
 
     return () => {
+      activo = false
       observador.disconnect()
       clearTimeout(espera)
     }
@@ -127,13 +192,36 @@ export function MedicionRender({
   }[tipo]
   const kb = (v: number) => v.toLocaleString('es-CL', { maximumFractionDigits: 1 })
 
-  const maximo = Math.max(1, ...TIPOS.map((t) => sesion[t]?.catalogo ?? 0))
+  const maximo = Math.max(1, ...TIPOS.map((t) => sesion[t]?.lcp ?? 0))
 
   return (
     <div className="medicion">
-      <p className="medicion-titulo">Medición de esta carga</p>
+      <p className="medicion-titulo">Core Web Vitals de esta visita</p>
+      <dl className="cifras vitales">
+        {VITALES.map(([nombre, completo, umbral, espera]) => {
+          const v = vitales[nombre]
+          const [etiqueta, clase] = v ? RATING[v.rating] : ['', '']
+          return (
+            <div key={nombre}>
+              <dt>
+                <strong>{nombre}</strong> {completo}
+              </dt>
+              <dd className={clase}>
+                {v ? (nombre === 'CLS' ? cls(v.valor) : ms(v.valor)) : '...'}
+                <span className="rating">{etiqueta}</span>
+              </dd>
+              <dd className="pista">
+                {v ? (v.elemento ? `elemento: ${v.elemento.split('>').at(-1)}` : 'ningún elemento se movió') : espera}
+              </dd>
+              <dd className="pista">{umbral}</dd>
+            </div>
+          )
+        })}
+      </dl>
+
+      <p className="medicion-titulo">Línea de tiempo de la carga</p>
       <dl className="cifras">
-        {COLUMNAS.map(([clave, nombre]) => (
+        {LINEA.map(([clave, nombre]) => (
           <div key={clave}>
             <dt>{nombre}</dt>
             <dd>{ms(actual[clave])}</dd>
@@ -144,46 +232,52 @@ export function MedicionRender({
         <div>
           <dt>Datos del catálogo</dt>
           <dd>{datos}</dd>
-          <span className="pista">{pista}</span>
+          <dd className="pista">{pista}</dd>
         </div>
         <div>
           <dt>HTML que manda el servidor</dt>
           <dd>{html ? `${kb(html.kb)} kB, con ${html.productos} de 12 productos` : '...'}</dd>
-          <span className="pista">Es lo que ven Google y quien no tiene JavaScript.</span>
+          <dd className="pista">Es lo que ven Google y quien no tiene JavaScript.</dd>
         </div>
       </dl>
 
-      <table className="comparacion">
-        <caption>Comparación en esta sesión (visiten las tres rutas)</caption>
-        <thead>
-          <tr>
-            <th>Ruta</th>
-            {COLUMNAS.map(([clave, nombre]) => (
-              <th key={clave}>{nombre}</th>
-            ))}
-            <th className="barra-col" aria-label="Gráfico del catálogo visible" />
-          </tr>
-        </thead>
-        <tbody>
-          {TIPOS.map((t) => {
-            const fila = sesion[t]
-            return (
-              <tr key={t} className={t === tipo ? 'actual' : undefined}>
-                <th>{t.toUpperCase()}</th>
-                {COLUMNAS.map(([clave]) => (
-                  <td key={clave}>{fila ? ms(fila[clave]) : 'sin medir'}</td>
-                ))}
-                <td className="barra-col">
-                  <span
-                    className="barra"
-                    style={{ width: `${((fila?.catalogo ?? 0) / maximo) * 100}%` }}
-                  />
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
+      <div className="tabla-scroll">
+        <table className="comparacion">
+          <caption>Comparación en esta sesión (visiten las tres rutas)</caption>
+          <thead>
+            <tr>
+              <th>Ruta</th>
+              {TABLA.map(([clave, nombre]) => (
+                <th key={clave}>{nombre}</th>
+              ))}
+              <th className="barra-col">
+                <span className="solo-lectores">Gráfico del LCP</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {TIPOS.map((t) => {
+              const fila = sesion[t]
+              return (
+                <tr key={t} className={t === tipo ? 'actual' : undefined}>
+                  <th>{t.toUpperCase()}</th>
+                  {TABLA.map(([clave]) => (
+                    <td key={clave}>
+                      {!fila ? 'sin medir' : clave === 'inp' && fila.inp === undefined ? 'sin clic' : formato(clave, fila[clave])}
+                    </td>
+                  ))}
+                  <td className="barra-col">
+                    <span
+                      className="barra"
+                      style={{ width: `${((fila?.lcp ?? 0) / maximo) * 100}%` }}
+                    />
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
       {/* Párrafos cortos a propósito: un texto largo aquí sería el
           elemento LCP y escondería cuándo aparece el catálogo */}
       <p className="nota">Recarguen cada ruta: la primera visita también baja el JS y el CSS.</p>
