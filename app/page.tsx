@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { GrillaProductos } from '@/components/GrillaProductos'
+import { Recomendaciones } from '@/components/Recomendaciones'
 import { obtenerProductos } from '@/lib/productos'
 
 export default async function Inicio() {
@@ -8,16 +9,14 @@ export default async function Inicio() {
   return (
     <>
       <section className="hero">
-        {/* La foto es el elemento LCP: no la cargamos en diferido
-            y le pedimos al navegador que la descargue primero */}
+        {/* Todas las imágenes en diferido, para ahorrar datos */}
         <Image
           src="/hero.jpg"
           alt="Valle del Cajón del Maipo con cerros nevados"
           width={2560}
           height={1706}
           sizes="100vw"
-          loading="eager"
-          fetchPriority="high"
+          loading="lazy"
           className="hero-img"
         />
         <div className="hero-texto">
@@ -29,6 +28,7 @@ export default async function Inicio() {
       <section className="contenedor">
         <h2>Destacados</h2>
         <GrillaProductos productos={productos.slice(0, 6)} />
+        <Recomendaciones />
         <p className="credito">
           Foto: Cajón del Maipo, por edoalemirored (CC0).
         </p>
