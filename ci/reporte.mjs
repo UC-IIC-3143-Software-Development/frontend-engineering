@@ -1,9 +1,9 @@
 // Compara las mediciones de main y del PR y escribe el comentario del
-// PR en Markdown. Uso: node ci/reporte.mjs <dir-main> <dir-pr> <crux.json>
+// PR en Markdown. Uso: node ci/reporte.mjs <dir-main> <dir-pr>
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-const [dirMain, dirPr, archivoCrux] = process.argv.slice(2)
+const [dirMain, dirPr] = process.argv.slice(2)
 const RUTAS = ['/', '/render/ssg', '/render/ssr', '/render/csr']
 
 // Métricas de la clase. tol: cambio que se considera ruido de medición.
@@ -36,12 +36,24 @@ function leerLighthouse(dir) {
   }
   const resultado = {}
   for (const [ruta, lista] of Object.entries(corridas)) {
-    resultado[ruta] = { puntaje: mediana(lista.map((l) => l.categories.performance.score * 100)) }
+    const puntaje = (categoria) =>
+      mediana(lista.map((l) => (l.categories[categoria]?.score ?? 0) * 100))
+    resultado[ruta] = {
+      puntaje: puntaje('performance'),
+      accesibilidad: puntaje('accessibility'),
+      buenasPracticas: puntaje('best-practices'),
+      seo: puntaje('seo'),
+    }
     for (const m of METRICAS) {
       resultado[ruta][m.id] = mediana(lista.map((l) => l.audits[m.id].numericValue))
     }
   }
   return resultado
+}
+
+function leerA11y(dir) {
+  const archivo = path.join(dir, 'medicion-a11y.json')
+  return existsSync(archivo) ? JSON.parse(readFileSync(archivo, 'utf8')) : {}
 }
 
 function leerTamano(dir) {
@@ -112,39 +124,53 @@ for (const ruta of RUTAS) {
   anotar(resultado, `puntaje en \`${ruta}\``)
 }
 
-// CrUX: datos de producción, no del PR
-const UMBRALES_CRUX = {
-  largest_contentful_paint: ['LCP', [2500, 4000]],
-  interaction_to_next_paint: ['INP', [200, 500]],
-  cumulative_layout_shift: ['CLS', [0.1, 0.25]],
-  first_contentful_paint: ['FCP', [1800, 3000]],
-  experimental_time_to_first_byte: ['TTFB', [800, 1800]],
-}
-const ICONO = { bueno: '🟢', mejorable: '🟡', deficiente: '🔴' }
+// Puntajes de Lighthouse fuera de performance
+const CATEGORIAS = [
+  ['accesibilidad', 'Accesibilidad (Lighthouse)', true],
+  ['buenasPracticas', 'Buenas prácticas (Lighthouse)', false],
+  ['seo', 'SEO (Lighthouse)', false],
+]
+const IMPACTO = { critical: 'crítico', serious: 'serio', moderate: 'moderado', minor: 'menor' }
+const a11yMain = leerA11y(dirMain)
+const a11yPr = leerA11y(dirPr)
+const filasA11y = []
+const violacionesPr = []
 
-function seccionCrux() {
-  const crux = existsSync(archivoCrux) ? JSON.parse(readFileSync(archivoCrux, 'utf8')) : { error: 'sin-archivo' }
-  const lineas = ['### Usuarios reales (CrUX)', '']
-  if (crux.error === 'sin-clave') {
-    lineas.push('No se consultó CrUX: falta el secreto `CRUX_API_KEY` del repositorio. El README explica cómo crearlo.')
-  } else if (crux.error === 'sin-datos') {
-    lineas.push(`CrUX no tiene datos de ${crux.origen}: necesita tráfico suficiente de usuarios reales de Chrome.`)
-  } else if (crux.error) {
-    lineas.push(`No se pudo consultar CrUX (${crux.error}).`)
-  } else {
-    const fin = crux.registro.collectionPeriod?.lastDate
-    const fecha = fin ? `${String(fin.day).padStart(2, '0')}-${String(fin.month).padStart(2, '0')}-${fin.year}` : 'sin fecha'
-    lineas.push(`Sitio: ${crux.origen}, celulares, p75 de los 28 días al ${fecha}.`, '')
-    lineas.push('| Métrica | p75 | Calificación |', '|---|---:|---|')
-    for (const [clave, [nombre, umbral]] of Object.entries(UMBRALES_CRUX)) {
-      const p75 = crux.registro.metrics[clave]?.percentiles?.p75
-      if (p75 === undefined) continue
-      const valor = Number(p75)
-      const nota = calificar(valor, umbral)
-      lineas.push(`| ${nombre} | ${nombre === 'CLS' ? numero(valor, 2) : `${numero(valor)} ms`} | ${ICONO[nota]} ${nota} |`)
+for (const ruta of RUTAS) {
+  if (!main[ruta] || !pr[ruta]) continue
+  for (const [clave, nombre, principal] of CATEGORIAS) {
+    const b = main[ruta][clave]
+    const p = pr[ruta][clave]
+    const resultado = veredicto(p - b, 0, true)
+    const fila = `| \`${ruta}\` | ${nombre} | ${numero(b)} | ${numero(p)} | ${signo(p - b)}${numero(Math.abs(p - b))} | ${resultado} |`
+    if (principal) filasA11y.push(fila)
+    else detalle.push(fila)
+    anotar(resultado, `${nombre.replace(' (Lighthouse)', '').toLowerCase()} en \`${ruta}\``)
+  }
+  // axe-core: reglas que fallan y elementos afectados
+  const vMain = a11yMain[ruta]?.violaciones
+  const vPr = a11yPr[ruta]?.violaciones
+  if (vMain && vPr) {
+    const elementos = (lista) => lista.reduce((total, v) => total + v.elementos, 0)
+    const texto = (lista) => `${lista.length} ${lista.length === 1 ? 'regla' : 'reglas'}, ${elementos(lista)} elem.`
+    const delta = vPr.length - vMain.length || elementos(vPr) - elementos(vMain)
+    const resultado = veredicto(delta, 0)
+    filasA11y.push(`| \`${ruta}\` | Violaciones de axe-core | ${texto(vMain)} | ${texto(vPr)} | ${signo(vPr.length - vMain.length)}${Math.abs(vPr.length - vMain.length)} reglas | ${resultado} |`)
+    anotar(resultado, `accesibilidad (axe) en \`${ruta}\``)
+    for (const v of vPr) {
+      violacionesPr.push(`| \`${ruta}\` | [\`${v.regla}\`](${v.url}) | ${IMPACTO[v.impacto] ?? v.impacto} | ${v.elementos} | ${v.ayuda} |`)
     }
   }
-  lineas.push('', '> CrUX no evalúa este PR: resume 28 días de visitas reales en producción. Sirve para saber si el problema existe y para confirmar la mejora unas semanas después del deploy. El sitio se configura con la variable `CRUX_ORIGIN`.')
+}
+
+function seccionA11y() {
+  const lineas = ['### Accesibilidad', '', '| Ruta | Métrica | main | Este PR | Cambio | Resultado |', '|---|---|---:|---:|---:|---|', ...filasA11y, '']
+  if (violacionesPr.length) {
+    lineas.push('Reglas que fallan en este PR:', '', '| Ruta | Regla | Impacto | Elementos | Qué falla |', '|---|---|---|---:|---|', ...violacionesPr)
+  } else {
+    lineas.push('axe-core no encontró violaciones en este PR.')
+  }
+  lineas.push('', '> axe-core es el motor open source de accesibilidad que también usa Lighthouse. Revisa reglas de WCAG 2 y buenas prácticas, pero no reemplaza la revisión manual con teclado y lector de pantalla.')
   return lineas.join('\n')
 }
 
@@ -164,9 +190,9 @@ ${resumen}${textoMejoras}
 |---|---|---:|---:|---:|---|
 ${filas.join('\n')}
 
-INP no aparece porque en una carga de Lighthouse nadie hace clic: TBT es su aproximación. El INP real sale del RUM de la tienda (\`/rum\`) y de CrUX.
+INP no aparece porque en una carga de Lighthouse nadie hace clic: TBT es su aproximación. El INP real se mide con usuarios: el RUM de la tienda (\`/rum\`).
 
-<details><summary>Más métricas de Lighthouse: FCP, Speed Index, TTFB y puntaje</summary>
+<details><summary>Más métricas de Lighthouse: FCP, Speed Index, TTFB, puntaje, buenas prácticas y SEO</summary>
 
 | Ruta | Métrica | main | Este PR | Cambio | Resultado |
 |---|---|---:|---:|---:|---|
@@ -174,6 +200,6 @@ ${detalle.join('\n')}
 
 </details>
 
-${seccionCrux()}
+${seccionA11y()}
 
-<sub>Cómo se midió: Lighthouse con el perfil de celular por defecto (Moto G Power simulado, CPU 4x, red de 1,6 Mbps), mediana de 3 corridas por ruta. \`main\` y el PR se miden en el mismo runner, uno después del otro. Se considera ruido un cambio de hasta 5% o 50 ms en LCP, FCP y Speed Index, 10% o 30 ms en TBT y TTFB, 0,01 en CLS, 2 puntos en el puntaje y 1% en el JS.</sub>`)
+<sub>Cómo se midió: Lighthouse con el perfil de celular por defecto (Moto G Power simulado, CPU 4x, red de 1,6 Mbps), mediana de 3 corridas por ruta. \`main\` y el PR se miden en el mismo runner, uno después del otro. Se considera ruido un cambio de hasta 5% o 50 ms en LCP, FCP y Speed Index, 10% o 30 ms en TBT y TTFB, 0,01 en CLS, 2 puntos en el puntaje de performance y 1% en el JS. En accesibilidad, buenas prácticas, SEO y axe-core cualquier cambio cuenta.</sub>`)

@@ -1,7 +1,8 @@
 name: Reporte de rendimiento del PR
 
-# Mide main y el PR en el mismo runner y comenta en el PR si cada
-# métrica mejora, se mantiene o empeora. No bloquea el merge: eso lo
+# Mide main y el PR en el mismo runner (Lighthouse, size-limit y
+# axe-core) y comenta en el PR si cada métrica mejora, se mantiene o
+# empeora. No bloquea el merge: eso lo
 # hacen los presupuestos del workflow Rendimiento.
 on:
   pull_request:
@@ -37,28 +38,25 @@ jobs:
             pr/package-lock.json
             main/package-lock.json
 
-      # Las dos versiones con la misma configuración de Lighthouse
-      - name: Medir main
-        working-directory: main
-        env:
-          LHCI_CONFIG: ${{ github.workspace }}/pr/lighthouserc.js
-        run: ../pr/ci/medir.sh
-
+      # El PR va primero: sus dependencias (axe-core, puppeteer-core)
+      # también se usan para medir main con la misma configuración
       - name: Medir el PR
         working-directory: pr
         env:
           LHCI_CONFIG: ${{ github.workspace }}/pr/lighthouserc.js
+          A11Y_SCRIPT: ${{ github.workspace }}/pr/ci/accesibilidad.mjs
         run: ./ci/medir.sh
 
-      - name: Consultar CrUX (usuarios reales en producción)
+      - name: Medir main
+        working-directory: main
         env:
-          CRUX_API_KEY: ${{ secrets.CRUX_API_KEY }}
-          CRUX_ORIGIN: ${{ vars.CRUX_ORIGIN }}
-        run: node pr/ci/crux.mjs > crux.json
+          LHCI_CONFIG: ${{ github.workspace }}/pr/lighthouserc.js
+          A11Y_SCRIPT: ${{ github.workspace }}/pr/ci/accesibilidad.mjs
+        run: ../pr/ci/medir.sh
 
       - name: Armar el reporte
         run: |
-          node pr/ci/reporte.mjs main pr crux.json > reporte.md
+          node pr/ci/reporte.mjs main pr > reporte.md
           cat reporte.md >> "$GITHUB_STEP_SUMMARY"
 
       # Un solo comentario por PR: si ya existe, se actualiza.

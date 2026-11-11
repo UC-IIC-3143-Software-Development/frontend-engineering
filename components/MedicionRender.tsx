@@ -205,10 +205,10 @@ export function MedicionRender({
                 {v ? (nombre === 'CLS' ? cls(v.valor) : ms(v.valor)) : '...'}
                 <span className="rating">{etiqueta}</span>
               </dd>
-              <span className="pista">
+              <dd className="pista">
                 {v ? (v.elemento ? `elemento: ${v.elemento.split('>').at(-1)}` : 'ningún elemento se movió') : espera}
-              </span>
-              <span className="pista">{umbral}</span>
+              </dd>
+              <dd className="pista">{umbral}</dd>
             </div>
           )
         })}
@@ -227,12 +227,12 @@ export function MedicionRender({
         <div>
           <dt>Datos del catálogo</dt>
           <dd>{datos}</dd>
-          <span className="pista">{pista}</span>
+          <dd className="pista">{pista}</dd>
         </div>
         <div>
           <dt>HTML que manda el servidor</dt>
           <dd>{html ? `${kb(html.kb)} kB, con ${html.productos} de 12 productos` : '...'}</dd>
-          <span className="pista">Es lo que ven Google y quien no tiene JavaScript.</span>
+          <dd className="pista">Es lo que ven Google y quien no tiene JavaScript.</dd>
         </div>
       </dl>
 
@@ -245,7 +245,9 @@ export function MedicionRender({
               {TABLA.map(([clave, nombre]) => (
                 <th key={clave}>{nombre}</th>
               ))}
-              <th className="barra-col" aria-label="Gráfico del LCP" />
+              <th className="barra-col">
+                <span className="solo-lectores">Gráfico del LCP</span>
+              </th>
             </tr>
           </thead>
           <tbody>

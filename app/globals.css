@@ -350,8 +350,12 @@ h1 {
   text-overflow: ellipsis;
 }
 
-.pista {
+/* Va dentro de un <dd>: necesita más especificidad que .cifras dd */
+.pista,
+.cifras .pista {
   display: block;
+  margin: 0;
+  font-weight: 400;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

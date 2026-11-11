@@ -144,24 +144,17 @@ runner y deja un comentario en el PR, que se actualiza con cada push:
 - Para cada métrica: valor en `main`, valor en el PR, cambio y si
   **mejora, se mantiene o empeora**. Un cambio pequeño cuenta como ruido
   de medición. Los umbrales están en `ci/reporte.mjs`.
-- **CrUX**: el p75 de usuarios reales de Chrome en celular, 28 días, del
-  sitio en producción. No evalúa el PR: dice si el problema existe y
-  confirma la mejora semanas después del deploy.
+- **Accesibilidad**: puntaje de accesibilidad de Lighthouse y las
+  violaciones que encuentra [axe-core](https://github.com/dequelabs/axe-core),
+  el motor open source que también usa Lighthouse, con cada regla, su
+  impacto y cuántos elementos afecta (`ci/accesibilidad.mjs`).
+- **Buenas prácticas y SEO** de Lighthouse, en la sección desplegable.
 
 Este reporte informa y no bloquea. Lo que bloquea son los presupuestos
 del workflow **Rendimiento**.
 
-Para activar CrUX:
-
-1. En Google Cloud, habiliten la API **Chrome UX Report API** en un
-   proyecto y creen una API key restringida a esa API.
-2. Guárdenla como secreto del repositorio:
-   `gh secret set CRUX_API_KEY`
-3. Opcional: indiquen el sitio en producción (por defecto, `https://web.dev`):
-   `gh variable set CRUX_ORIGIN --body https://su-sitio.cl`
-
-CrUX solo tiene datos de sitios públicos con tráfico suficiente. Tienda
-Andes corre en local, por eso el ejemplo usa web.dev.
+Todo corre con herramientas open source y sin cuentas ni claves:
+Lighthouse CI, size-limit y axe-core sobre el Chrome del runner.
 
 ## RUM: métricas de usuarios reales
 
