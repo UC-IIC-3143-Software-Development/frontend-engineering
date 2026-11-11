@@ -8,6 +8,11 @@ import type { Producto } from '@/lib/productos'
 // mismas medidas, para que la llegada de los datos no mueva la página.
 // El panel va entre la bajada y la grilla: así el texto del catálogo
 // queda arriba, visible en cualquier pantalla, y sigue siendo el LCP.
+const BAJADA =
+  'Equipamiento probado en la cordillera, desde el desierto de Atacama ' +
+  'hasta Torres del Paine. Precios en pesos chilenos con IVA incluido y ' +
+  'despacho a todo Chile.'
+
 export function Catalogo({
   productos,
   panel,
@@ -22,15 +27,19 @@ export function Catalogo({
           <h1>Catálogo de temporada</h1>
           {/* elementtiming: el panel de medición registra cuándo se pinta */}
           <p className="bajada" elementtiming="catalogo">
-            Equipamiento probado en la cordillera, desde el desierto de
-            Atacama hasta Torres del Paine. Precios en pesos chilenos con
-            IVA incluido y despacho a todo Chile.
+            {BAJADA}
           </p>
         </>
       ) : (
         <>
-          <div className="esqueleto esqueleto-titulo" />
-          <div className="esqueleto esqueleto-bajada" />
+          {/* Esqueleto con el mismo texto, oculto: mide exactamente lo
+              mismo con cualquier fuente y no se pinta, así no es el LCP */}
+          <div className="titulo-catalogo esqueleto" aria-hidden="true">
+            <span className="oculto">Catálogo de temporada</span>
+          </div>
+          <div className="bajada esqueleto" aria-hidden="true">
+            <span className="oculto">{BAJADA}</span>
+          </div>
         </>
       )}
       {panel}

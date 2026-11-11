@@ -172,31 +172,16 @@ h1 {
   border-radius: 10px;
 }
 
-.esqueleto-titulo {
-  /* mismo alto que el h1: 1,9rem por 1,2 de interlineado */
-  height: 2.28rem;
-  width: 60%;
+/* Mismas reglas que h1, para el esqueleto del título */
+.titulo-catalogo {
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.2;
   margin: 0.5rem 0 0.75rem;
 }
 
-.esqueleto-bajada {
-  /* mismo alto que la bajada: 1,725rem por línea (1,15rem por 1,5).
-     Son 2 líneas en escritorio, 3 en tablet y 4 en celular */
-  height: 3.45rem;
-  max-width: 60ch;
-  margin: 0 0 1.5rem;
-}
-
-@media (max-width: 660px) {
-  .esqueleto-bajada {
-    height: 5.175rem;
-  }
-}
-
-@media (max-width: 450px) {
-  .esqueleto-bajada {
-    height: 6.9rem;
-  }
+.oculto {
+  visibility: hidden;
 }
 
 .credito,

@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { onCLS, onINP, onLCP } from 'web-vitals/attribution'
 import type { MetricWithAttribution } from 'web-vitals/attribution'
 
 export type TipoRender = 'ssg' | 'ssr' | 'csr'
@@ -124,9 +123,15 @@ export function MedicionRender({
       }
       guardar()
     }
-    onLCP(registrar, { reportAllChanges: true })
-    onINP(registrar, { reportAllChanges: true })
-    onCLS(registrar, { reportAllChanges: true })
+    // Import dinámico: web-vitals se carga después de hidratar y no
+    // retrasa la carga de la página (en CSR, el pedido de los datos).
+    // Sus observadores usan buffered, así que no pierden nada
+    import('web-vitals/attribution').then(({ onCLS, onINP, onLCP }) => {
+      if (!activo) return
+      onLCP(registrar, { reportAllChanges: true })
+      onINP(registrar, { reportAllChanges: true })
+      onCLS(registrar, { reportAllChanges: true })
+    })
 
     const tipos = PerformanceObserver.supportedEntryTypes
     const conElement = tipos.includes('element')
