@@ -40,3 +40,5 @@ jobs:
         with:
           name: reportes-lighthouse
           path: .lighthouseci/
+          # .lighthouseci empieza con punto: sin esto se ignora
+          include-hidden-files: true

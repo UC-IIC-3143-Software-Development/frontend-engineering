@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Catalogo } from '@/components/Catalogo'
-import { Esqueleto } from '@/components/Esqueleto'
+import { PanelRender } from '@/components/PanelRender'
 import type { Producto } from '@/lib/productos'
 
 // CSR: el HTML inicial trae solo el esqueleto. Los datos se piden
@@ -16,6 +16,6 @@ export default function PaginaCSR() {
       .then(setProductos)
   }, [])
 
-  if (!productos) return <Esqueleto />
-  return <Catalogo productos={productos} />
+  // Mientras no llegan los datos, Catalogo muestra el esqueleto
+  return <Catalogo productos={productos} panel={<PanelRender tipo="csr" />} />
 }

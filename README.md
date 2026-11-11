@@ -22,6 +22,21 @@ renderizado. El "backend" está simulado y siempre tarda 300 ms:
 | `/render/ssr` | SSR        | Se pagan en cada request, antes del HTML    |
 | `/render/csr` | CSR        | Se pagan en el navegador, después del JS    |
 
+Cada ruta de `/render` muestra un panel con qué hace esa estrategia, en
+qué se diferencia de las otras y cómo lo percibe el usuario. Debajo mide
+esa misma carga en el navegador:
+
+- **Primer byte** (TTFB), **primer pintado** (FCP) y **catálogo visible**,
+  con la Element Timing API sobre el párrafo del catálogo.
+- **Interactiva**: cuándo React terminó de hidratar la página.
+- **Datos del catálogo**: la hora del build (SSG), la de la petición (SSR)
+  o cuánto tardó `/api/productos` desde el navegador (CSR).
+- **HTML que manda el servidor**: su peso y cuántos productos trae.
+- Una tabla que compara las tres rutas visitadas en la sesión.
+
+El código está en `components/PanelRender.tsx` y
+`components/MedicionRender.tsx`.
+
 ## Correr en local
 
 Necesitan Node 20.9 o superior y Google Chrome (para Lighthouse CI).
@@ -50,6 +65,8 @@ ejecuciones.
 
 - `app/page.tsx`: portada con la imagen LCP.
 - `app/render/{ssg,ssr,csr}/page.tsx`: las tres estrategias.
+- `components/PanelRender.tsx` y `components/MedicionRender.tsx`: el
+  panel que explica y mide cada estrategia.
 - `app/web-vitals.tsx`: envía las métricas con `navigator.sendBeacon`.
 - `app/api/rum/route.ts`: guarda cada métrica en `.data/rum.ndjson`.
 - `app/rum/page.tsx` y `lib/p75.ts`: el tablero y el cálculo del p75.
