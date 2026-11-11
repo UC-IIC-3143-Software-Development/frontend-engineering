@@ -131,6 +131,38 @@ En el PR van a ver que fallan los dos presupuestos:
 
 Para volver atrás: `git apply -R demo/regresion.patch`.
 
+## Reporte de rendimiento en cada PR
+
+El workflow **Reporte de rendimiento del PR**
+(`.github/workflows/reporte-pr.yml`) mide `main` y el PR en el mismo
+runner y deja un comentario en el PR, que se actualiza con cada push:
+
+- **Core Web Vitals de laboratorio** por ruta: LCP, CLS y TBT (TBT
+  aproxima a INP, porque en una carga de Lighthouse nadie hace clic).
+- **Peso del JavaScript** (size-limit).
+- **FCP, Speed Index, TTFB y puntaje**, en una sección desplegable.
+- Para cada métrica: valor en `main`, valor en el PR, cambio y si
+  **mejora, se mantiene o empeora**. Un cambio pequeño cuenta como ruido
+  de medición. Los umbrales están en `ci/reporte.mjs`.
+- **CrUX**: el p75 de usuarios reales de Chrome en celular, 28 días, del
+  sitio en producción. No evalúa el PR: dice si el problema existe y
+  confirma la mejora semanas después del deploy.
+
+Este reporte informa y no bloquea. Lo que bloquea son los presupuestos
+del workflow **Rendimiento**.
+
+Para activar CrUX:
+
+1. En Google Cloud, habiliten la API **Chrome UX Report API** en un
+   proyecto y creen una API key restringida a esa API.
+2. Guárdenla como secreto del repositorio:
+   `gh secret set CRUX_API_KEY`
+3. Opcional: indiquen el sitio en producción (por defecto, `https://web.dev`):
+   `gh variable set CRUX_ORIGIN --body https://su-sitio.cl`
+
+CrUX solo tiene datos de sitios públicos con tráfico suficiente. Tienda
+Andes corre en local, por eso el ejemplo usa web.dev.
+
 ## RUM: métricas de usuarios reales
 
 1. Con `npm run start` corriendo, abran varias páginas y hagan clic en
