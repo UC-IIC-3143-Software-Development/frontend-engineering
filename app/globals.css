@@ -427,3 +427,116 @@ h1 {
 .tabla-scroll .comparacion {
   min-width: 560px;
 }
+
+/* Asistente del centro de ayuda: botón fijo abajo a la derecha.
+   Es position: fixed, así que no mueve el contenido (sin CLS). */
+.asistente {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.asistente-boton {
+  padding: 0.7rem 1.1rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--acento);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.18);
+}
+
+.asistente-panel {
+  width: min(380px, calc(100vw - 2.5rem));
+  max-height: min(560px, calc(100vh - 6rem));
+  overflow-y: auto;
+  padding: 1rem;
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.18);
+}
+
+.asistente-cargando {
+  color: var(--suave);
+}
+
+.asistente-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.asistente-cerrar {
+  border: 0;
+  background: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--suave);
+  cursor: pointer;
+}
+
+.asistente-ayuda,
+.asistente-suave,
+.asistente-metricas {
+  color: var(--suave);
+  font-size: 0.85rem;
+}
+
+.asistente-respuesta {
+  white-space: pre-wrap;
+  min-height: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.asistente-cita {
+  padding: 0 0.2rem;
+  border-radius: 4px;
+  background: #dcefe9;
+  color: var(--acento);
+  font-weight: 600;
+}
+
+.asistente-fuentes {
+  margin: 0.25rem 0;
+  padding-left: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--suave);
+}
+
+.asistente-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.asistente-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.asistente-form button {
+  padding: 0.55rem 0.8rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--acento);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.asistente-form button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}

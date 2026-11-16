@@ -37,6 +37,38 @@ esa misma carga en el navegador:
 El código está en `components/PanelRender.tsx` y
 `components/MedicionRender.tsx`.
 
+## Asistente del centro de ayuda
+
+Abajo a la derecha de cada página hay un botón «¿Dudas? Pregúntanos» que abre
+un chat con el asistente RAG de la tienda. El asistente es otro proyecto, en
+Python: [ia-rag](https://github.com/UC-IIC-3143-Software-Development/ia-rag).
+
+```
+navegador ──POST /api/asistente──▶ Next.js ──POST /preguntar──▶ ia-rag (FastAPI)
+          ◀──── stream SSE ───────         ◀──── stream SSE ────
+```
+
+- `app/api/asistente/route.ts` es un proxy: el navegador solo habla con la
+  tienda, así que no hace falta CORS y la dirección del backend no llega al
+  cliente. Reenvía el stream SSE tal cual, y si el asistente no responde
+  devuelve 503 con un mensaje para el cliente.
+- `components/Asistente.tsx` es el botón. El panel
+  (`components/PanelAsistente.tsx`) se descarga con `next/dynamic` recién
+  cuando el cliente abre el chat: no suma JavaScript a la carga inicial ni
+  afecta el LCP. El botón usa `position: fixed`, así que no mueve el
+  contenido (sin CLS).
+- El panel lee el stream con `fetch` y `TextDecoderStream`: muestra las
+  fuentes apenas llegan, el texto a medida que se genera, las citas [n] y,
+  al final, el tiempo hasta el primer texto y el costo.
+
+Para usarlo, levanten el asistente en el puerto 8000 (ver su README) y la
+tienda normalmente. Si el asistente corre en otra dirección, defínanla en
+`.env.local`:
+
+```bash
+ASISTENTE_URL=http://localhost:8000
+```
+
 ## Correr en local
 
 Necesitan Node 20.9 o superior y Google Chrome (para Lighthouse CI).

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Asistente } from '@/components/Asistente'
 import { WebVitals } from './web-vitals'
 import './globals.css'
 
@@ -28,6 +29,8 @@ export default function RootLayout({
           </nav>
         </header>
         <main>{children}</main>
+        {/* Asistente del centro de ayuda: RAG del proyecto ia-rag, vía /api/asistente */}
+        <Asistente />
         <footer className="pie">
           Demo de clase: rendimiento web, observabilidad y CI/CD.
         </footer>
